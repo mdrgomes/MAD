@@ -1,5 +1,5 @@
 /*-------------------------------------------------------------------*\
-|  TAD para implementacao de grafo dirigido com DOIS pesos (int)      |
+|  grafos0.h  --- TAD para implementacao de grafo dirigido SEM pesos  |
 |                                                                     |
 |    Versão simplificada;  |V| <=  MAXVERTS;                          |
 |     Assume-se que os vértices são numerados de 1 a |V|.             |
@@ -17,7 +17,6 @@
 
 typedef struct arco {
   int no_final;
-  int valor[2];    // DOIS valores
   struct arco *prox;
 } ARCO;
 
@@ -39,8 +38,8 @@ GRAFO *new_graph(int nverts);
 /* cria um grafo com nverts vertices e sem arcos */
 void destroy_graph(GRAFO *g);
 /* liberta o espaço reservado na criação do grafo */
-void insert_new_arc(int i, int j, int valor0, int valor1, GRAFO *g);
-/* insere arco (i,j) no grafo, bem como os dois pesos; não evita repetições */
+void insert_new_arc(int i, int j, GRAFO *g);
+/* insere arco (i,j) no grafo; não evita repetições */
 void remove_arc(ARCO *arco, int i, GRAFO *g);
 /* retira adjacente arco da lista de adjacentes de i */
 ARCO *find_arc(int i, int j, GRAFO *g);
@@ -59,14 +58,11 @@ ARCO *find_arc(int i, int j, GRAFO *g);
 #define ADJ_VALIDO(arco) (((arco) != NULL))
 // se arco é válido
 #define EXTREMO_FINAL(arco) ((arco) -> no_final)
-// acesso ao extremo final de arco
-#define VALOR1_ARCO(arco) ((arco) -> valor[0])
-// acesso ao valor1 do arco
-#define VALOR2_ARCO(arco) ((arco) -> valor[1])
-// acesso ao valor2 do arco
+// qual o extremo final de arco
+
 
 //======  protótipos de funções auxiliares (privadas) ======
-static ARCO* cria_arco(int, int valor1,int valor2);
+static ARCO* cria_arco(int);
 static void free_arcs(ARCO *);
 
 
@@ -106,10 +102,10 @@ void destroy_graph(GRAFO *g)
 }
 
 // para inserir um novo arco num grafo
-void insert_new_arc(int i, int j, int valor1, int valor2, GRAFO *g)
-{ /* insere arco (i,j) no grafo g, bem como os seus pesos  */
+void insert_new_arc(int i, int j, GRAFO *g)
+{ /* insere arco (i,j) no grafo g  */
 
-  ARCO *arco = cria_arco(j,valor1,valor2);
+  ARCO *arco = cria_arco(j);
   PROX_ADJ(arco) = ADJS_NO(i,g);
   ADJS_NO(i,g) = arco;  // novo adjacente fica à cabeça da lista
   NUM_ARCOS(g)++;
@@ -148,7 +144,7 @@ ARCO *find_arc(int i, int j, GRAFO *g){
 // ----  as duas funcoes abaixo sao auxiliares nao publicas ----
 
 // reservar memoria para um novo arco e inicializa-lo
-static ARCO *cria_arco(int j, int valor1, int valor2)
+static ARCO *cria_arco(int j)
 { // cria um novo adjacente
   ARCO *arco = (ARCO *) malloc(sizeof(ARCO));
   if (arco == NULL) {
@@ -156,8 +152,6 @@ static ARCO *cria_arco(int j, int valor1, int valor2)
     exit(EXIT_FAILURE);
   }
   EXTREMO_FINAL(arco) = j;
-  VALOR1_ARCO(arco) = valor1;
-  VALOR2_ARCO(arco) = valor2;
   PROX_ADJ(arco) = NULL;
   return arco;
 }
