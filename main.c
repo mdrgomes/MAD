@@ -55,7 +55,7 @@ void earl_star(GRAFO *g, int n_Tasks){
 	S = mk_empty_queue(nTasks);
 	int DurMin =-1;
 	int v_f=0;
-
+//falta enqueue
 	BOOL a= TRUE;
 	while(a!=FALSE){
 		int v = dequeue(S);
@@ -78,7 +78,21 @@ void earl_star(GRAFO *g, int n_Tasks){
 	//print_way(v_f,Prec, DurMin, g);//acabar
 }
 
-/*void lates_fini(GRAFO*g, int n_Tasks){
+GRAFO *transposto(GRAFO *g){
+	int n = NUM_VERTICES(g);
+	GRAFO *gt = new_graph(n);
+	int i;
+	for(i=0;i<n+1;i++){
+		ARCO *adjv = ADJS_NO(i,g);
+		while(adjv!=NULL){
+			int w = EXTREMO_FINAL(adjv);
+			insert_new_arc(w,i,duration, nTrab, gt);
+		}
+	}
+	return gt;
+}
+
+void lates_fini(GRAFO*g, int n_Tasks){
 	for(i=1;i<=nTasks;i++){
 		LF[i]= DurMin;
 		GRauS=0;		
@@ -88,11 +102,22 @@ void earl_star(GRAFO *g, int n_Tasks){
 			GRauS[j] ++;
 		}
 	}
-	//grafo transposto
+	GRAFO *gt = transposto(g);
 	QUEUE* S = mk_empty_queue(nTasks);
-	while(queue_is_Empty)
+	enqueue();
+	while(queue_is_Empty!=FALSE){
+		int v = dequeue(S);
+		ARCO * adjs = ADJS_NO(v,gt);
+		while(adjs!=NULL){
+			if(LF[w]> LF[v]-VALOR1_ARCO(adjs))
+				LF[w]= LF[v] - VALOR1_ARCO(adjs);
+			GRauS[w]=GRauS[w]-1;
+			if(GRauS[w]==0)
+				enqueue(w,S);
+			adjs = PROX_ADJ(adjs);
+		}
+	}
 }
-*/
 int main(){
 
 	GRAFO *g = ler_construir_grafo();//concluida
