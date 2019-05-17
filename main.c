@@ -147,6 +147,8 @@ void lates_fini(GRAFO*g){
 		printf("valor de v %d\n", v);
 		ARCO * adjs = ADJS_NO(v,gt);
 		while(adjs!=NULL){
+			int w = EXTREMO_FINAL(adjs);
+			printf("valor w %d\n", );
 			if(_LF[w]> _LF[v]-VALOR1_ARCO(adjs))
 				_LF[w]= _LF[v] - VALOR1_ARCO(adjs);
 			grauS[w]=grauS[w]-1;
