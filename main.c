@@ -128,18 +128,15 @@ GRAFO *transposto(GRAFO *g){
 
 void lates_fini(GRAFO*g){
 	int i, j, w;
-	for(i=1;i<=nTasks;i++){
-		_LF[i]= durMin;
-		grauS[i]=0;		
-	}
-	for(i=1;i<=NUM_ARCOS(g);i++){
-		for(j=1;j<=NUM_ARCOS(g);j++){
-			grauS[j]++;
-		}
-	}
 	GRAFO *gt = transposto(g);
 	QUEUE* S = mk_empty_queue(nTasks);
-	enqueue(v_f,S);
+
+	for(i=1;i<=nTasks;i++){
+        //printf("grauE[%d]=%d | grauS[%d]=%d\n",i,grauE[i],i,grauS[i]);
+        if(grauS[i] == 0)
+            enqueue(i,S);
+    }
+
 	printf("valor de v_f %d\n", v_f);
 	BOOL a = FALSE;
 	while(a!=TRUE){
@@ -148,7 +145,7 @@ void lates_fini(GRAFO*g){
 		ARCO * adjs = ADJS_NO(v,gt);
 		while(adjs!=NULL){
 			int w = EXTREMO_FINAL(adjs);
-			printf("valor w %d\n", );
+			printf("valor w %d\n", w);
 			if(_LF[w]> _LF[v]-VALOR1_ARCO(adjs))
 				_LF[w]= _LF[v] - VALOR1_ARCO(adjs);
 			grauS[w]=grauS[w]-1;
@@ -158,9 +155,9 @@ void lates_fini(GRAFO*g){
 		}
 		a = queue_is_empty(S);
 	}
-	/*for(i=1;i<=nTasks;i++)
+	for(i=1;i<=nTasks;i++)
         printf("\tprec[%d] = %d  LF[%d] = %d\n",i,prec[i],i,_LF[i]);
-        */
+        
 }
 
 void escreveCaminho(int v_f, int tasks, int prec[tasks]){
