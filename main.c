@@ -180,8 +180,8 @@ void lates_fini(GRAFO* g){
 
 		a = queue_is_empty(q);
 	}
-	for(i=1;i<=nTasks;i++)
-        printf("\tprec[%d] = %d  LF[%d] = %d   ES[%d] = %d\n",i,prec[i],i,_LF[i], i,_ES[i]);
+	//for(i=1;i<=nTasks;i++)
+      //  printf("\tprec[%d] = %d  LS[%d] = %d   ES[%d] = %d\n",i,prec[i],i,_LS[i], i,_ES[i]);
         
 }
 
@@ -234,29 +234,65 @@ void folga_livre(GRAFO *g){
 	}
 }
 
-void number_works(GRAFO *g){//pergunta 1.2 //algoritmos do earliest start
-	int i, j, w;
-	int flag[MAXVERTS];
-	int workers=0;
-	int time=0;
-	BOOL a= FALSE;
-	QUEUE *q = mk_empty_queue(nTasks);
+int trabalhadores_necessarios_ES(GRAFO *g) {
+    int i,j,max = 0, cont;
+    int events_matrix[nTasks+1][MAXVERTS];
+    for(i=0;i<=nTasks;i++)
+        for(j=0;j<MAXVERTS;j++)
+            events_matrix[i][j] = 0;
+
+    for(i=1; i<=nTasks;i++){
+        //printf("entrei %d\n",i);
+        ARCO* adj = ADJS_NO(i,g);
+
+        for(j=_ES[i]; j < _ES[i] + VALOR1_ARCO(adj);j++){
+            events_matrix[i][j]= VALOR2_ARCO(adj);
+           // printf("---events_matrix[%d][%d] = %d\n", i, j, events_matrix[i][j]);
+        }
+    }
+
+    for(j=0;j<14;j++){
+        cont = 0;
+        for(i=1;i<=nTasks;i++){
+                cont += events_matrix[i][j];
+            //printf("---events_matrix[%d][%d] = %d\n", i, j, events_matrix[i][j]);
+        }
+
+       //printf("cont=%d\n",cont);
+        if (max < cont)
+            max = cont;
+    }
+    return max;
+}
+
+void work_critc(GRAFO *g){
+	int i,j, max=0,cont;
+	int events_matrix[nTasks+1][MAXVERTS];
+	for(i=0;i<=nTasks;i++)
+        for(j=0;j<MAXVERTS;j++)
+            events_matrix[i][j] = 0;
 
 	for(i=1;i<=nTasks;i++){
-		if(_ES[i]==0)
-			enqueue(i,q);
+		ARCO* adj = ADJS_NO(i,g);
+		if(_ES[i]==_LS[i]){
+			for(j=_ES[i];j < _ES[i] + VALOR1_ARCO(adj);j++){
+				events_matrix[i][j]= VALOR2_ARCO(adj);
+			}
+		}
 	}
-	//fazer contagem com o numeor de trabalhadores com ES
-	int v;
-	//int a =0;
-	/*n_trab=-1;
 
+	for(j=0;j<14;j++){
+        cont = 0;
+        for(i=1;i<=nTasks;i++){
+                cont += events_matrix[i][j];
+            //printf("---events_matrix[%d][%d] = %d\n", i, j, events_matrix[i][j]);
+        }
 
-	for(i=0;i<durMin;i++){
-		
-	}*/
-	printf("%d\n", workers);
-	
+       //printf("cont=%d\n",cont);
+        if (max < cont)
+            max = cont;
+    }
+    printf("tarefas criticas trabalhadores %d\n",max );
 }
 
 int main(){
@@ -266,11 +302,16 @@ int main(){
 	lates_start(g);
 	folga_total(g);
 	folga_livre(g);
-	
-	//number_works(g);
+	int i;
+	  int t = trabalhadores_necessarios_ES(g);
+	  printf("TRABALHADORES : %d\n",t);
+	work_critc(g);
 	//printf("Num vertices %d\n", NUM_VERTICES(g));
 	//printf("Num arcos %d\n", NUM_ARCOS(g));
+	for(i=1;i<=nTasks;i++)
+        printf("\tprec[%d] = %d  LS[%d] = %d   ES[%d] = %d   LF[%d] : %d\n",i,prec[i],i,_LS[i], i,_ES[i], i , _LF[i]);
+        
 	return 0;
 }
 
-//atividade critica FT = FL 
+//atividade critica ES=LS 
