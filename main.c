@@ -2,8 +2,6 @@
 #include "grafos2.h"
 #include "queue.h"
 #include "string.h"
-#define IN 1
-#define OUT 0
 
 //variaveis globais
 static int nTasks;  
@@ -20,28 +18,23 @@ static int prec[MAXVERTS];
 static int dur[MAXVERTS];
 static int trab[MAXVERTS];
 
+
+//concluida
 GRAFO * ler_construir_grafo(){
 	GRAFO *g;
 	int n_tarefa , nTrab,n_preced;
 	int duration, i, j, y;
-	//printf("Enter number of tasks\n");
 	scanf("%d", &nTasks);
-	//int array[20];
-	g = new_graph(nTasks+1);
+	g = new_graph(nTasks+2);
 	for(i=1;i<=nTasks;i++){
-		//printf("Enter Task\n");
 		scanf("%d", &n_tarefa);
-		//printf("Enter number of precedents\n");
 		scanf("%d", &n_preced);
-
-		//array com precedencias 
 		int array[20], j=0;
 		while(j<n_preced){
-			//printf("precedente\n");
 			scanf("%d", &array[j]);
 			j++;
 		}
-		//printf("duração e numero de trablhadores\n");
+
 		scanf("%d %d", &duration, &nTrab);
 		dur[n_tarefa] = duration;
 		trab[n_tarefa] = nTrab;
@@ -51,37 +44,31 @@ GRAFO * ler_construir_grafo(){
 			insert_new_arc(n_tarefa, array[y], duration, nTrab, g);
 	}
 
-	//instanciar arrays de grau de entrada e de saida
-	for(i=1;i<=nTasks;i++){
+	for(i=0;i<=nTasks+1;i++){
 		_ES[i]=0;
+		_LS[i]=0;
+		_FT[i]=0;
+		_FL[i]=0;
 		prec[i]=-99;
 		grauE[i]=0;
 		grauS[i]=0;	
 	}
-	for(i=1;i<=nTasks;i++)
+	for(i=1;i<=nTasks;i++){
 		for(j=1;j<=nTasks;j++)
 			if(find_arc(i,j,g)!=NULL){
 				grauE[j]=grauE[j]+1;
 				grauS[i]=grauS[i]+1;
 			}
-	return g;
-}
+			if( grauE[i] == 0 )
+				insert_new_arc(0, i, 0, 0, g);
+			if( grauS[i] == 0)
+				insert_new_arc(i, 0, 0, 0, g);
 
-
-		/*   PERGUNTA 1.2 //usar o earliest start 
-
-		int events_matrix[nTasks][MAXVERTS];
-		for(i=0;i<nTasks;i++)
-		for(j=0;j<MAXVERTS;j++)
-			events_matrix[i][j] = 0;
-		
-		ARCO* adj = ADJS_NO(i,g);
-		for(j=0; j<VALOR1_ARCO(adj);j++){
-			events_matrix[i][j]= VALOR2_ARCO(adj);
-			printf("---events_matrix[%d][%d] = %d\n", i, j, events_matrix[k][j]);
 		}
-		*/
-	
+
+		return g;
+	}
+
 
 //concluida
 void earl_star(GRAFO *g){
@@ -91,111 +78,91 @@ void earl_star(GRAFO *g){
 	BOOL a = FALSE;
 	int v, max_trabalhadores_activos = 0;
 	ARCO* arc ;
-
-	//tarefas iniciais (sem precedentes)
+	int grE[nTasks+1];
 	for(i=1;i<=nTasks;i++){
-		//printf("grauE[%d]=%d | grauS[%d]=%d\n",i,grauE[i],i,grauS[i]);
+		grE[i] = grauE[i];
 		if(grauE[i] == 0)
 			enqueue(i,q);
 	}
 
-	//algoritmo ES
 	while(a != TRUE){
 		v = dequeue(q);
-		//printf("tarefa %d\n",v);
 		ARCO* adj = ADJS_NO(v,g);
-		if( durMin < _ES[v] + VALOR1_ARCO(adj)){
-			durMin = _ES[v] + VALOR1_ARCO(adj);
+		if( durMin < _ES[v] + dur[v]){
+			durMin = _ES[v] + dur[v];
 			v_f = v;
-		}	
-		//max_trabalhadores_activos += VALOR2_ARCO(adj);
+		}
 		while(adj!=NULL){
-			//printf("entrei\n");
 			int w = EXTREMO_FINAL(adj);
 			if(_ES[w] < _ES[v] + VALOR1_ARCO(adj)){
 				_ES[w] = _ES[v] + VALOR1_ARCO(adj);
 				prec[w] = v;
 			}
-			grauE[w] = grauE[w]-1; 
-			if(grauE[w] == 0)
+			grE[w] = grE[w]-1; 
+			if(grE[w] == 0)
 				enqueue(w,q);
 			adj = PROX_ADJ(adj);
 		}
 		a = queue_is_empty(q);
 	}
 
-	//for(i=1;i<=nTasks;i++)
-	//	printf("\tprec[%d] = %d  ES[%d] = %d\n",i,prec[i],i,_ES[i]); 
-	printf("duracao minima do projeto: %d\n",durMin);
 }
 
 GRAFO * transposto(GRAFO *g){
-	int n = NUM_VERTICES(g);
 	GRAFO *gt = new_graph(nTasks+1);
 	int i;
-	for(i=1;i<=nTasks;i++){
+
+	for(i=0;i<=nTasks;i++){
 		ARCO *adj = ADJS_NO(i,g);
-		if(grauE[i] == 0){
-			insert_new_arc(i,nTasks+1,VALOR1_ARCO(adj),VALOR2_ARCO(adj),gt);
-		}
 		while(adj!=NULL){
-			//printf("alerta\n");
 			int w = EXTREMO_FINAL(adj);
-			//printf("I:%d   w:%d\n",i, w );
-			insert_new_arc(w,i,VALOR1_ARCO(adj), VALOR2_ARCO(adj), gt);
+			insert_new_arc(w,i,dur[i], trab[i], gt);
 			adj = PROX_ADJ(adj);
 		}
 	}
-	
 	return gt;
 }
 
 void lates_fini(GRAFO* g){
 	int i, j, w;
-	GRAFO* gt = transposto(g);
 	QUEUE * q = mk_empty_queue(nTasks);
 	BOOL a = FALSE;
+
 	for(i=1;i<=nTasks;i++){
-		_LF[i]= durMin;
+		_LF[i]= _ES[nTasks+1];
 		if(grauS[i] == 0)
 			enqueue(i,q);
 	}
-	while(a!=TRUE){
+
+	while(a!=TRUE) {
 		int v = dequeue(q);
-		ARCO * adjs = ADJS_NO(v,gt);
-		//printf("v: %d\n", v);
-		while(adjs != NULL){
-			w = EXTREMO_FINAL(adjs);
-			if(_LF[w] > _LF[v] - VALOR1_ARCO(adjs)){
-				_LF[w]= _LF[v] - VALOR1_ARCO(adjs);
-				//printf("LF[%d]: %d \n",w,_LF[w] );
-			}
-			grauS[w]=grauS[w]-1;
-			if(grauS[w]==0){
-				//printf("alerta\n");
+		ARCO * adjs = ADJS_NO(v,g);
+		while(adjs!=NULL){
+			int w = EXTREMO_FINAL(adjs);
+			if(_LF[w] > _LF[v] - dur[v])
+				_LF[w] = _LF[v] - dur[v];
+
+			grauS[w] = grauS[w]-1;
+			if(grauS[w]==0)
 				enqueue(w,q);
-			}
 			adjs = PROX_ADJ(adjs);
 		}
-
 		a = queue_is_empty(q);
 	}
-	//for(i=1;i<=nTasks;i++)
-      //  printf("\tprec[%d] = %d  LS[%d] = %d   ES[%d] = %d\n",i,prec[i],i,_LS[i], i,_ES[i]);
-        
+	
 }
 
 //concluida
-void escreveCaminho(int v_f){
+void escreveCaminho(int v_final){
 	int j=0, i=1, k = 0;
 	int* caminho = (int *) malloc(nTasks * sizeof(int));
 	for(i=0; i<nTasks;i++)
 		caminho[i] = 0;
 
-	caminho[0] = v_f;
-	while( prec[v_f] != -99 ) {
-		caminho[++k] = prec[v_f];
-		v_f = prec[v_f];
+	caminho[0] = v_final;
+	while( prec[v_final] != -99 ) {
+		caminho[++k] = prec[v_final];
+		v_final = prec[v_final];
 	}
 
 	printf("---CAMINHO---\n");
@@ -205,113 +172,83 @@ void escreveCaminho(int v_f){
 	printf("\n");
 }
 
-void lates_start(GRAFO *g){
-	//LS = LF[ij] - Dij
-	int i;	
-	for(i=1;i<=nTasks;i++){
-		ARCO * adjs = ADJS_NO(i,g);
-		_LS[i]= _LF[i] - VALOR1_ARCO(adjs);
-		//printf("LS[%d] : %d\n", i, _LS[i]);
-	}
-}
-
-void folga_total(GRAFO *g){
-	int i;
-	for(i=1;i<=nTasks;i++){
-		_FT[i]= _LS[i] - _ES[i];
-	}
-}
-
-void folga_livre(GRAFO *g){
-	int i;
-	for (i = 1; i<=nTasks; ++i){
-		ARCO *adjs=ADJS_NO(i,g);
-		while(adjs!=NULL){
-			int w = EXTREMO_FINAL(adjs);
-			_FL[i] = _ES[w] - ( _ES[i] - VALOR1_ARCO(adjs));
-			adjs = PROX_ADJ(adjs);
-		}
-	}
-}
-
+//   PERGUNTA 1.2 concluida
 int trabalhadores_necessarios_ES(GRAFO *g) {
-    int i,j,max = 0, cont;
-    int events_matrix[nTasks+1][MAXVERTS];
-    for(i=0;i<=nTasks;i++)
-        for(j=0;j<MAXVERTS;j++)
-            events_matrix[i][j] = 0;
+	int active_jobs[_ES[nTasks+1]];
+	int  cont = 0;
+	int i,j,max;
 
-    for(i=1; i<=nTasks;i++){
-        //printf("entrei %d\n",i);
-        ARCO* adj = ADJS_NO(i,g);
+	for(i=1; i<=nTasks;i++){
+		if( _ES[i] == 0 )
+			cont += trab[i];
+	}
+	max = active_jobs[0] = cont;
+	for(j=1;j <= _ES[nTasks+1];j++){
+		for(i=1;i<=nTasks;i++){ 
+			if( _ES[i] + dur[i] == j)
+				cont -= trab[i];
 
-        for(j=_ES[i]; j < _ES[i] + VALOR1_ARCO(adj);j++){
-            events_matrix[i][j]= VALOR2_ARCO(adj);
-           // printf("---events_matrix[%d][%d] = %d\n", i, j, events_matrix[i][j]);
-        }
-    }
+			if( _ES[i] == j )
+				cont += trab[i];
 
-    for(j=0;j<14;j++){
-        cont = 0;
-        for(i=1;i<=nTasks;i++){
-                cont += events_matrix[i][j];
-            //printf("---events_matrix[%d][%d] = %d\n", i, j, events_matrix[i][j]);
-        }
+			active_jobs[j] = cont;
 
-       //printf("cont=%d\n",cont);
-        if (max < cont)
-            max = cont;
-    }
-    return max;
-}
-
-void work_critc(GRAFO *g){
-	int i,j, max=0,cont;
-	int events_matrix[nTasks+1][MAXVERTS];
-	for(i=0;i<=nTasks;i++)
-        for(j=0;j<MAXVERTS;j++)
-            events_matrix[i][j] = 0;
-
-	for(i=1;i<=nTasks;i++){
-		ARCO* adj = ADJS_NO(i,g);
-		if(_ES[i]==_LS[i]){
-			for(j=_ES[i];j < _ES[i] + VALOR1_ARCO(adj);j++){
-				events_matrix[i][j]= VALOR2_ARCO(adj);
-			}
+			if(cont > max)
+				max = cont;
+			
 		}
 	}
+	return max;
+}
 
-	for(j=0;j<14;j++){
-        cont = 0;
-        for(i=1;i<=nTasks;i++){
-                cont += events_matrix[i][j];
-            //printf("---events_matrix[%d][%d] = %d\n", i, j, events_matrix[i][j]);
-        }
+int min_trabalhadores(GRAFO* g){
+	int cont = 0, max, i, j;
 
-       //printf("cont=%d\n",cont);
-        if (max < cont)
-            max = cont;
-    }
-    printf("tarefas criticas trabalhadores %d\n",max );
+	for(i=1; i<=nTasks; i++) {
+		_LS[i] = _LF[i] - dur[i];
+		if( _LS[i] == _ES[i] )
+			printf("\t'ACTIVIDADE CRITICA' %d\n",i);
+	}
+
+	for(i=1; i<=nTasks;i++){
+		if( _ES[i] == 0  && _LS[i] == _ES[i])
+			cont += trab[i];
+	}
+	max = cont;
+	for(j=1;j <= _ES[nTasks+1];j++)
+		for(i=1;i<=nTasks;i++){ 
+			if( _ES[i] + dur[i] == j && 
+				_ES[i] == _LS[i] )
+				cont -= trab[i];
+
+			if( _ES[i] == j && 
+				_ES[i] == _LF[i] )
+				cont += trab[i];
+
+			if(cont > max)
+				max = cont;
+			
+		}
+	return max;
 }
 
 int main(){
-	GRAFO *g = ler_construir_grafo();//concluida
-	earl_star(g);
-	lates_fini(g);
-	lates_start(g);
-	folga_total(g);
-	folga_livre(g);
 	int i;
-	  int t = trabalhadores_necessarios_ES(g);
-	  printf("TRABALHADORES : %d\n",t);
-	work_critc(g);
-	//printf("Num vertices %d\n", NUM_VERTICES(g));
-	//printf("Num arcos %d\n", NUM_ARCOS(g));
-	for(i=1;i<=nTasks;i++)
-        printf("\tprec[%d] = %d  LS[%d] = %d   ES[%d] = %d   LF[%d] : %d\n",i,prec[i],i,_LS[i], i,_ES[i], i , _LF[i]);
-        
+	GRAFO *g = ler_construir_grafo();
+	earl_star(g);
+	escreveCaminho(prec[nTasks+1]);
+	GRAFO *gt = transposto(g);
+	lates_fini(gt);
+	int t = trabalhadores_necessarios_ES(g);
+	int mint = min_trabalhadores(g);
+
+	printf("1.1) Duração minima do projeto: %d\n", durMin);
+	printf("------------\n");
+	printf("1.2) Minimo de TRABALHADORES necessarios em funcao do ES: %d\n",t);
+	printf("------------\n");
+	printf("1.3) Minimo de TRABALHADORES nas tarefas criticas: %d\n", mint);
+	printf("------------\n");
+	printf("Num vertices %d\n", NUM_VERTICES(g));
+	printf("Num arcos %d\n", NUM_ARCOS(g));
 	return 0;
 }
-
-//atividade critica ES=LS 
